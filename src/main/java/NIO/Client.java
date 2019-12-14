@@ -1,17 +1,13 @@
 package NIO;
 
-import com.sun.javafx.binding.StringFormatter;
 import constant.ChartConstant;
+import gui.GUI;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
-import util.FileAndStringTransformUtil;
-import util.SerializableUtil;
-import util.Transmission;
-import util.TransmissionType;
+import util.*;
 
 import java.io.IOException;
 import java.net.ConnectException;
-import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -42,9 +38,9 @@ public class Client {
     private SocketChannel socketChannel;
 
     /**
-     * 从服务器接收文件默认保存位置
+     * 聊天工具类
      */
-    private String savingFilePath;
+    private ChartUtil chartUtil;
 
     public static void main(String[] args) {
         Client client = new Client();
@@ -80,9 +76,11 @@ public class Client {
                     log.info("请输出本地文件路径");
                     String in = scanner.nextLine();
                     transmission = new Transmission(FileAndStringTransformUtil.fileToString(in), TransmissionType.FILE, clientNumber, thisClientNumber);
-                    log.info("文件内容{}", transmission);
-                    byte[] bytes = SerializableUtil.toBytes(transmission);
-                    log.info("bytes={}", bytes);
+                    if (transmission.getContent() == null || transmission.getContent().isEmpty()) {
+                        log.info("transmission content is null, interrupt");
+                        continue;
+                    }
+//                    log.info("文件内容{}", transmission);
                     sendToSocketChannel(transmission);
                 } else {
                     System.out.println("操作终止");
@@ -96,11 +94,33 @@ public class Client {
      */
     private void sendToSocketChannel(Transmission transmission) {
         byte[] bytes = SerializableUtil.toBytes(transmission);
+//        log.info("sending bytes = {}, bytes length is {}", bytes, Objects.requireNonNull(bytes).length);
+        int byteLength = Objects.requireNonNull(bytes).length;
+        log.info("sending bytes length is {}", byteLength);
         ByteBuffer byteBuffer = ByteBuffer.allocate(Objects.requireNonNull(bytes).length);
         byteBuffer.put(bytes);
         byteBuffer.flip();
+//        ByteBuffer[] byteBufferArray = new ByteBuffer[10];
+//        int offset = 0;
+//        for (int i = 0; i < byteBufferArray.length -1; i++) {
+//            byteBufferArray[i] = ByteBuffer.allocate(byteLength/10);
+//            byteBufferArray[i].put(bytes, offset, byteLength / 10);
+//            offset += byteLength / 10;
+//            byteBufferArray[i].flip();
+//        }
+//        log.info("offset = {}, byteLength = {}, allocate capacity = {}",offset,byteLength,byteLength/10+byteLength%10);
+//        byteBufferArray[9] = ByteBuffer.allocate(byteLength-offset);
+//        byteBufferArray[9].put(bytes,offset,byteBufferArray[9].capacity());
+//        offset+= byteBufferArray[9].capacity();
+//        log.info("offset = {}, bytesLength = {}",offset,byteLength);
         try {
-            socketChannel.write(byteBuffer);
+//            socketChannel.write(byteBufferArray);
+//            socketChannel.shutdownOutput();
+            while(byteBuffer.hasRemaining()) {
+//                log.info("sent:{}, remain: {}.",byteBuffer.capacity()-byteBuffer.remaining(),byteBuffer.remaining());
+                socketChannel.write(byteBuffer);
+            }
+            log.info("sent:{}, remain: {}.",byteBuffer.capacity()-byteBuffer.remaining(),byteBuffer.remaining());
         } catch (IOException e) {
             e.printStackTrace();
             log.error(ChartConstant.IO_ERROR);
@@ -112,11 +132,13 @@ public class Client {
         selector = Selector.open();
         socketChannel = SocketChannel.open();
         socketChannel.configureBlocking(false);
+        chartUtil = new ChartUtil();
     }
 
     @SneakyThrows
     private void start() {
-        if (socketChannel.connect(new InetSocketAddress(ChartConstant.PORT))) {
+//        if (socketChannel.connect(new InetSocketAddress("127.0.0.1",ChartConstant.PORT))) {
+        if (socketChannel.connect(ChartConstant.inetSocketAddress)) {
             socketChannel.register(selector, SelectionKey.OP_READ);
             log.info("OP_READ");
         } else {
@@ -147,36 +169,30 @@ public class Client {
                 }
             }
             if (key.isReadable()) {
-                ByteBuffer byteBuffer = ByteBuffer.allocate(1024*10);
-                int byteRead = socketChannel.read(byteBuffer);
-                if (byteRead < 0) {
-                    key.cancel();
-                    socketChannel.close();
+                byte[] bytes = chartUtil.readBytesFromChannel(key);
+                if (bytes.length == 0) {
                     log.error("bytes not available");
-                } else {
-                    byteBuffer.flip();
-                    byte[] bytes = new byte[byteBuffer.remaining()];
-                    byteBuffer.get(bytes);
-                    Transmission transmission = (Transmission) SerializableUtil.toObject(bytes);
-                    if (TransmissionType.STRING.equals(Objects.requireNonNull(transmission).getTransmissionType())) {
-                        StringFormatter.format("client {}: {}", transmission.getSourceNumber(), transmission.getContent());
-                        System.out.println("client " + transmission.getSourceNumber() + " :" + transmission.getContent());
-                    } else if (TransmissionType.FILE.equals(transmission.getTransmissionType())) {
+                    return;
+                }
+                Transmission transmission = (Transmission) SerializableUtil.toObject(bytes);
+                if (TransmissionType.STRING.equals(Objects.requireNonNull(transmission).getTransmissionType())) {
+                    System.out.println("[client " + transmission.getSourceNumber() + "]: " + transmission.getContent());
+                } else if (TransmissionType.FILE.equals(transmission.getTransmissionType())) {
 //                        log.info("handle file {}",transmission.getContent());
-                        log.info("handle file");
-                        new Thread(() -> {
-                            String filePath = new Scanner(System.in).nextLine();
-                            FileAndStringTransformUtil.stringToFile(transmission.getContent(), filePath);
-                            System.out.println("成功接收文件");
-                        }).start();
-                    } else if (TransmissionType.MESSAGE.equals(transmission.getTransmissionType())) {
-                        log.info("server message:{}", transmission.getContent());
-                    } else if (TransmissionType.UUID.equals(transmission.getTransmissionType())) {
-                        thisClientNumber = Integer.parseInt(transmission.getContent());
-                        log.info("set clientNumber :{}", thisClientNumber);
-                    } else {
-                        log.error("No action in inputHandler.");
-                    }
+                    new Thread(() -> {
+                        log.info("请输入文件保存路径");
+                        GUI gui = new GUI();
+                        gui.init(transmission);
+                    }).start();
+                } else if (TransmissionType.MESSAGE.equals(transmission.getTransmissionType())) {
+                    log.info("server message:{}", transmission.getContent());
+                } else if (TransmissionType.UUID.equals(transmission.getTransmissionType())) {
+                    thisClientNumber = Integer.parseInt(transmission.getContent());
+                    log.info("set clientNumber :{}", thisClientNumber);
+                } else if (transmission.getTransmissionType() == null) {
+                    log.info("no action in inputHandler");
+                } else {
+                    log.error("invalid transmission, no action");
                 }
             }
         } catch (ConnectException e) {

@@ -26,12 +26,11 @@ public class FileAndStringTransformUtil {
             byte[] bytes = streamToByte(fileInputStream);
             return new BASE64Encoder().encodeBuffer(bytes);
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
-            log.info("file {} not found.", filePath);
+            log.error("file {} not found.", filePath);
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return "";
+        return null;
     }
 
     /**

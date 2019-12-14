@@ -1,9 +1,9 @@
 package NIO;
 
 import constant.ChartConstant;
-import lombok.NonNull;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
+import util.ChartUtil;
 import util.SerializableUtil;
 import util.Transmission;
 import util.TransmissionType;
@@ -23,7 +23,7 @@ import java.util.Set;
  * @author yinchao
  * @Date 2019/11/27 19:28
  */
-@Slf4j(topic = "server")
+@Slf4j(topic = "聊天器服务端")
 public class Server {
     /**
      * 保存所有客户端的socketChannel信息
@@ -34,6 +34,11 @@ public class Server {
      * 主选择器
      */
     private Selector selector;
+
+    /**
+     * 聊天的工具类
+     */
+    private ChartUtil chartUtil;
 
     public static void main(String[] args) {
         Server server = new Server();
@@ -62,12 +67,17 @@ public class Server {
             // 配置触发条件:当有新的连接时进行注册
             serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT, "server");
 
+            chartUtil = new ChartUtil();
+
         } catch (IOException e) {
             e.printStackTrace();
             System.out.println(ChartConstant.IO_ERROR);
         }
     }
 
+    /**
+     * 主要逻辑部分
+     */
     @SneakyThrows
     private void start() {
         while (true) {
@@ -85,8 +95,14 @@ public class Server {
         }
     }
 
+    /**
+     * 处理一个有数据交换的key
+     *
+     * @param key 有数据交换的key
+     */
+    @SneakyThrows
     private void handleInput(SelectionKey key) {
-        log.info("in handleInput");
+//        log.info("in handleInput");
         // key 非法或已过期
         if (!key.isValid()) {
             return;
@@ -95,76 +111,33 @@ public class Server {
         // 将刚刚连接的key的channel保存下来
         if (key.isAcceptable()) {
             // 获取到这个有消息响应的key的channel
-            try {
-                ServerSocketChannel serverSocketChannelOther = (ServerSocketChannel) key.channel();
-                SocketChannel socketChannel = serverSocketChannelOther.accept();
-                socketChannel.configureBlocking(false);
-                socketChannel.register(selector, SelectionKey.OP_READ);
-                socketChannelArrayList.add(socketChannel);
-                int size = socketChannelArrayList.size() - 1;
-                log.info("size = {}.", size + 1);
-                Transmission transmission = new Transmission();
-                transmission.setContent(String.valueOf(size));
-                transmission.setDestinationNumber(size);
-                transmission.setTransmissionType(TransmissionType.UUID);
-                transmission.setSourceNumber(-1);
-                send(transmission);
-            } catch (IOException e) {
-                e.printStackTrace();
-                System.out.println(ChartConstant.IO_ERROR);
-            }
+            ServerSocketChannel serverSocketChannelOther = (ServerSocketChannel) key.channel();
+            SocketChannel socketChannel = serverSocketChannelOther.accept();
+            socketChannel.configureBlocking(false);
+            socketChannel.register(selector, SelectionKey.OP_READ);
+            socketChannelArrayList.add(socketChannel);
+            int size = socketChannelArrayList.size() - 1;
+            Transmission transmission = new Transmission();
+            transmission.setContent(String.valueOf(size));
+            transmission.setDestinationNumber(size);
+            transmission.setTransmissionType(TransmissionType.UUID);
+            transmission.setSourceNumber(-1);
+            send(transmission);
             return;
         }
 
         if (key.isReadable()) {
-            try {
-                SocketChannel socketChannel = (SocketChannel) key.channel();
-                // 最坑的一点是这个地方,必须把ByteBuffer设置大一点,这样最大才10k
-                ByteBuffer byteBuffer = ByteBuffer.allocate(1024*10);
-                int channelRead = socketChannel.read(byteBuffer);
-                if (channelRead < 0) {
-                    key.cancel();
-                    socketChannel.close();
-                    // todo 移除可能会有并发的问题,暂时还是把没有用到的socketChannel先保存下来
-//                    socketChannelArrayList.remove(socketChannel);
-//                    log.info("after remove one socketChannel, the size is {}", socketChannelArrayList.size());
-                    log.info("one socketChannel is closed.");
-                    return;
-                }
-                byteBuffer.flip();
-                byte[] bytes = new byte[byteBuffer.remaining()];
-                byteBuffer.get(bytes);
-                log.info("bytes={}",bytes);
-                Transmission transmission;
-                transmission = (Transmission) SerializableUtil.toObject(bytes);
-                log.info("invoke the method handleInput, the parameter is {}", transmission);
-                send(transmission);
-            } catch (IOException e) {
-                e.printStackTrace();
-                log.error(ChartConstant.IO_ERROR);
+            byte[] bytes = chartUtil.readBytesFromChannel(key);
+            if (bytes.length == 0) {
+                log.info("one socketChannel is closed.");
+                return;
             }
+            Transmission transmission = (Transmission) SerializableUtil.toObject(bytes);
+            if(!TransmissionType.FILE.equals(transmission.getTransmissionType())) {
+                log.info("invoke the method handleInput, the parameter is {}", transmission);
+            }
+            send(transmission);
         }
-    }
-
-    /**
-     * @param echo 把客户端发送的传给群聊中的每一个人
-     */
-    private void sendStringToAll(String echo) {
-        System.out.printf("ALL Client:%s", echo);
-        byte[] bytes = (echo).getBytes();
-
-        // 二层遍历
-        socketChannelArrayList.forEach(item -> {
-                    ByteBuffer byteBuffer = ByteBuffer.allocate(bytes.length);
-                    byteBuffer.put(bytes);
-                    byteBuffer.flip();
-                    try {
-                        item.write(byteBuffer);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-        );
     }
 
     /**
@@ -173,16 +146,53 @@ public class Server {
      * @param transmission 自定义聊天器协议
      */
     @SneakyThrows
-    public void send(@NonNull Transmission transmission) {
+    public void send(Transmission transmission) {
+        if (transmission == null) {
+            sendErrorMessage(transmission);
+            return;
+        }
         byte[] bytes = SerializableUtil.toBytes(transmission);
         ByteBuffer byteBuffer = ByteBuffer.allocate(Objects.requireNonNull(bytes).length);
         byteBuffer.put(bytes);
         byteBuffer.flip();
         // 协议中的clientNumber合法
-        if (0 <= transmission.getDestinationNumber() && transmission.getDestinationNumber() < socketChannelArrayList.size()) {
-            socketChannelArrayList.get(transmission.getDestinationNumber()).write(byteBuffer);
+        if (transmission.getDestinationNumber() >= 0 && transmission.getDestinationNumber() < socketChannelArrayList.size() || transmission.getContent() == null) {
+            try {
+                while (byteBuffer.hasRemaining()) {
+                    log.info("remaining length = {}", byteBuffer.remaining());
+                    socketChannelArrayList.get(transmission.getDestinationNumber()).write(byteBuffer);
+                }
+            } catch (Exception e) {
+                sendErrorMessage(transmission);
+            }
         } else {
-            log.error("发送失败, the parameter in send is {}", transmission);
+            sendErrorMessage(transmission);
         }
     }
+
+    /**
+     * @param transmission 一个传输可能有问题的协议, 对它进行处理
+     */
+    @SneakyThrows
+    public void sendErrorMessage(Transmission transmission) {
+        if (transmission == null) {
+            log.error("transmission is null");
+            return;
+        }
+        log.error("error, the parameter in send is {}", transmission);
+        Transmission errorTransmission = new Transmission(ChartConstant.SENDING_FAILURE, TransmissionType.MESSAGE, transmission.getSourceNumber(), -1);
+        byte[] bytes = SerializableUtil.toBytes(errorTransmission);
+        ByteBuffer byteBuffer = ByteBuffer.allocate(Objects.requireNonNull(bytes).length);
+        byteBuffer.put(bytes);
+        byteBuffer.flip();
+        try {
+            while (byteBuffer.hasRemaining()) {
+                log.info("remaining length = {}", byteBuffer.remaining());
+                socketChannelArrayList.get(errorTransmission.getDestinationNumber()).write(byteBuffer);
+            }
+        } catch (Exception ex) {
+            log.error("错误信息发送失败");
+        }
+    }
+
 }
