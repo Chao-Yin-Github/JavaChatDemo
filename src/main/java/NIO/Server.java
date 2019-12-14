@@ -133,7 +133,7 @@ public class Server {
                 return;
             }
             Transmission transmission = (Transmission) SerializableUtil.toObject(bytes);
-            if(!TransmissionType.FILE.equals(transmission.getTransmissionType())) {
+            if (!TransmissionType.FILE.equals(transmission.getTransmissionType())) {
                 log.info("invoke the method handleInput, the parameter is {}", transmission);
             }
             send(transmission);

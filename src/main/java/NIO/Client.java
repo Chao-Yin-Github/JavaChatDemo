@@ -116,11 +116,11 @@ public class Client {
         try {
 //            socketChannel.write(byteBufferArray);
 //            socketChannel.shutdownOutput();
-            while(byteBuffer.hasRemaining()) {
+            while (byteBuffer.hasRemaining()) {
 //                log.info("sent:{}, remain: {}.",byteBuffer.capacity()-byteBuffer.remaining(),byteBuffer.remaining());
                 socketChannel.write(byteBuffer);
             }
-            log.info("sent:{}, remain: {}.",byteBuffer.capacity()-byteBuffer.remaining(),byteBuffer.remaining());
+            log.info("sent:{}, remain: {}.", byteBuffer.capacity() - byteBuffer.remaining(), byteBuffer.remaining());
         } catch (IOException e) {
             e.printStackTrace();
             log.error(ChartConstant.IO_ERROR);
