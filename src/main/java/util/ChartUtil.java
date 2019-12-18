@@ -29,7 +29,7 @@ public class ChartUtil {
         long sumBytes = 0L;
         byte[] bytes;
 
-        while (bytesRead > 0) {
+        while (bytesRead > 0 || byteBuffer.position() > 0) {
 //            log.info("bytesRead is {}", bytesRead);
             // buffer里面一定是已经存储好的,所以先切换为读状态
             byteBuffer.flip();
@@ -40,8 +40,16 @@ public class ChartUtil {
             // 把这个byte数组保存到list里面
             bytesList.add(bytes);
             sumBytes += bytes.length;
-            byteBuffer = ByteBuffer.allocate(ChartConstant.CAPACITY);
+//            byteBuffer = ByteBuffer.allocate(ChartConstant.CAPACITY);
+            byteBuffer.clear();
             bytesRead = socketChannel.read(byteBuffer);
+//            log.info("read {}", bytesRead);
+            if (bytesRead == 0) {
+                bytesRead = socketChannel.read(byteBuffer);
+                if (bytesRead == 0) {
+                    log.info("EOF");
+                }
+            }
         }
         bytes = new byte[Math.toIntExact(sumBytes)];
         sumBytes = 0L;

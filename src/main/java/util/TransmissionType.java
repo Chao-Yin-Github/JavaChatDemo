@@ -19,11 +19,6 @@ public enum TransmissionType implements Serializable {
     STRING,
 
     /**
-     * 图片
-     */
-    PIC,
-
-    /**
      * 信息
      */
     MESSAGE,

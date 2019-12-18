@@ -13,7 +13,7 @@ public class ChartConstant {
     public static final String IO_ERROR = "IO error.";
 
     /**
-     *
+     * 文件未找到
      */
     public static final String FILE_NOT_FOUND = "file not found.";
 
@@ -41,9 +41,9 @@ public class ChartConstant {
     public static String SENDING_FAILURE = "发送消息失败";
 
     /**
-     * 服务器内存太小了,为保障性能,只设置为3MB左右
+     * 可能是服务器内存太小了，或者网络问题，没法跑在服务器上
      */
-//    public static int CAPACITY = 1024 * 1024 * 3;
+    public static int CAPACITY = 1024 * 1024 * 10;
 
-    public static int CAPACITY = 1024 * 1024 * 512;
+//    public static int CAPACITY = 1024 * 1024 * 1024;
 }

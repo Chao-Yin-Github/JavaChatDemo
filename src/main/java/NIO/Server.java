@@ -58,6 +58,9 @@ public class Server {
              * TCP服务端连接通道
              */
             ServerSocketChannel serverSocketChannel = ServerSocketChannel.open();
+
+            chartUtil = new ChartUtil();
+
             // 配置 非阻塞
             serverSocketChannel.configureBlocking(false);
 
@@ -67,8 +70,6 @@ public class Server {
             // 配置触发条件:当有新的连接时进行注册
             serverSocketChannel.register(selector, SelectionKey.OP_ACCEPT, "server");
 
-            chartUtil = new ChartUtil();
-
         } catch (IOException e) {
             e.printStackTrace();
             System.out.println(ChartConstant.IO_ERROR);
@@ -76,7 +77,7 @@ public class Server {
     }
 
     /**
-     * 主要逻辑部分
+     * 服务器主要循环来监听新建的连接
      */
     @SneakyThrows
     private void start() {
@@ -88,10 +89,11 @@ public class Server {
             if (keySet.isEmpty()) {
                 continue;
             }
-            // 一层遍历有数据交换的key，但是这个是部分有数据交换的key，而不是所有保存下来的所有的key
+            // 一层遍历有数据交换的key，但是这个是部分有数据交换的key，而不if(bytesRead)是所有保存下来的所有的key
             keySet.forEach(this::handleInput);
             // 一定要clear不然会报错
             keySet.clear();
+            Thread.sleep(100);
         }
     }
 

@@ -96,7 +96,7 @@ public class Client {
         byte[] bytes = SerializableUtil.toBytes(transmission);
 //        log.info("sending bytes = {}, bytes length is {}", bytes, Objects.requireNonNull(bytes).length);
         int byteLength = Objects.requireNonNull(bytes).length;
-        log.info("sending bytes length is {}", byteLength);
+//        log.info("sending bytes length is {}", byteLength);
         ByteBuffer byteBuffer = ByteBuffer.allocate(Objects.requireNonNull(bytes).length);
         byteBuffer.put(bytes);
         byteBuffer.flip();
@@ -120,7 +120,7 @@ public class Client {
 //                log.info("sent:{}, remain: {}.",byteBuffer.capacity()-byteBuffer.remaining(),byteBuffer.remaining());
                 socketChannel.write(byteBuffer);
             }
-            log.info("sent:{}, remain: {}.", byteBuffer.capacity() - byteBuffer.remaining(), byteBuffer.remaining());
+//            log.info("sent:{}, remain: {}.", byteBuffer.capacity() - byteBuffer.remaining(), byteBuffer.remaining());
         } catch (IOException e) {
             e.printStackTrace();
             log.error(ChartConstant.IO_ERROR);
