@@ -22,7 +22,7 @@
     
         ```
         <!--将程序主清单入口改为服务端程序-->
-        <mainClass>NIO.Server</mainClass>
+        <mainClass>main.Server</mainClass>
         ```
         
         ```shell script
@@ -36,7 +36,7 @@
         同理，生成客户端jar包
         ```xml
         <!--将程序主清单入口改为客户端程序-->
-        <mainClass>NIO.Client</mainClass>
+        <mainClass>main.Client</mainClass>
         ```
         
         ```shell script

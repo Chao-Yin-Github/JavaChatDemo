@@ -1,4 +1,4 @@
-package NIO;
+package main;
 
 import constant.ChartConstant;
 import gui.GUI;

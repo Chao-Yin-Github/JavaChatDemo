@@ -1,4 +1,4 @@
-package NIO;
+package main;
 
 import constant.ChartConstant;
 import lombok.SneakyThrows;
@@ -89,9 +89,9 @@ public class Server {
             if (keySet.isEmpty()) {
                 continue;
             }
-            // 一层遍历有数据交换的key，但是这个是部分有数据交换的key，而不if(bytesRead)是所有保存下来的所有的key
+            // 一层遍历有数据交换的key，但是这个是部分有数据交换的key，而if(bytesRead)是所有保存下来的所有的key
             keySet.forEach(this::handleInput);
-            // 一定要clear不然会报错
+            // 一定要clear不然会报错,因为没有取消的
             keySet.clear();
             Thread.sleep(100);
         }
