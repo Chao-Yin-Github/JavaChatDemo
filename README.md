@@ -1,6 +1,4 @@
-# JavaChartingDemo
-
-一个自制的Java命令行聊天器Demo
+# JavaChatDemo
 
 ## Feature
 
