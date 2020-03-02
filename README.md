@@ -4,7 +4,7 @@
 <a href="https://img.shields.io/badge/Java-v1.8.0-red?style=plastic"><img src="https://img.shields.io/badge/Java-v1.8.0-red?sytle=plastic"></a>
 <a href="https://img.shields.io/badge/Platform-Manjaro 19.0.1 Kyria-blue?sytle=plastic"><img src="https://img.shields.io/badge/Platform-Manjaro 19.0.1 Kyria-blue?sytle=plastic"></a>
 <a href="http://47.100.76.82"><img src="https://img.shields.io/badge/blog-yc-yellow?sytle=plastic"></a>
-<a href=""><img src="https://img.shields.io/badge/contact me-yinchao.mail@foxmail.com-brightgreen?sytle=plastic"></a>
+<a href="mailto:yinchao.mail@foxmail.com"><img src="https://img.shields.io/badge/contact me-yinchao.mail@foxmail.com-brightgreen?sytle=plastic"></a>
 </p>
 
 
@@ -65,4 +65,4 @@
     - 如果是文件，则接收端需要在GUI界面填写文件保存路径
 
 ## 协议
-<a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="知识共享许可协议" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a><br /><span xmlns:dct="http://purl.org/dc/terms/" property="dct:title">JShell</span> 由 <a xmlns:cc="http://creativecommons.org/ns#" href="https://github.com/Chao-Yin-Github/JavaChatDemo" property="cc:attributionName" rel="cc:attributionURL">https://github.com/Chao-Yin-Github/JavaChatDemo</a> 采用 <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">知识共享 署名-非商业性使用-相同方式共享 4.0 国际 许可协议</a>进行许可。
+<a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/"><img alt="知识共享许可协议" style="border-width:0" src="https://i.creativecommons.org/l/by-nc-sa/4.0/88x31.png" /></a><br /><span xmlns:dct="http://purl.org/dc/terms/" property="dct:title">JavaChatDemo</span> 由 <a xmlns:cc="http://creativecommons.org/ns#" href="https://github.com/Chao-Yin-Github/JavaChatDemo" property="cc:attributionName" rel="cc:attributionURL">https://github.com/Chao-Yin-Github/JavaChatDemo</a> 采用 <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/4.0/">知识共享 署名-非商业性使用-相同方式共享 4.0 国际 许可协议</a>进行许可。
